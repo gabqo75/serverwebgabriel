@@ -6,11 +6,12 @@ CREATE TABLE administrateur (
     mot_de_passe VARCHAR(255) NOT NULL,
     role VARCHAR(55) NOT NULL CHECK (role IN ('super_admin', 'gestionnaire', 'editeur')), 
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE 
 );
 
 CREATE UNIQUE INDEX idx_admin_email ON administrateur (email);
-
+CREATE INDEX idx_admin_role ON administrateur (role);
 
 CREATE TABLE client (
     id_client SERIAL PRIMARY KEY,
@@ -20,12 +21,14 @@ CREATE TABLE client (
     mot_de_passe VARCHAR(255) NOT NULL,
     adresse VARCHAR(255),
     ville VARCHAR(55),
-    code_postal INTEGER,
+    code_postal VARCHAR(10),
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE 
 );
 
 CREATE UNIQUE INDEX idx_client_email ON client (email);
+CREATE INDEX idx_client_localisation ON client (ville, code_postal);
 
 CREATE TABLE categorie (
     id_categorie SERIAL PRIMARY KEY,
@@ -42,9 +45,12 @@ CREATE TABLE produit (
     description_detaillee TEXT, 
     prix NUMERIC(10, 2) NOT NULL CHECK (prix > 0.0), 
     stock INTEGER NOT NULL CHECK (stock >= 0),
+    stock_reserve INTEGER DEFAULT 0 CHECK (stock_reserve >= 0),
+    gestion_stock VARCHAR(55) NOT NULL CHECK (gestion_stock IN ('standard', 'precommande', 'illimite')),
     id_categorie INTEGER,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE,
     
     CONSTRAINT fk_categorie
         FOREIGN KEY(id_categorie)
@@ -54,6 +60,7 @@ CREATE TABLE produit (
 );
 
 CREATE INDEX idx_produit_categorie ON produit (id_categorie);
+CREATE UNIQUE INDEX idx_produit_nom_unique ON produit (nom) WHERE deleted_at IS NULL;
 
 CREATE TABLE commande (
     id_commande SERIAL PRIMARY KEY,
